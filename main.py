@@ -1,10 +1,11 @@
 import pygame
 import time
 from random import randint
+import glob
 
 black = (0, 0, 0)
 white = (255, 255, 255)
-green = (50, 205, 50)
+green = (0, 204, 0)
 screenWidth = 800
 screenHeight = 500
 img = pygame.image.load('birdy.png')
@@ -16,23 +17,22 @@ pygame.init()
 screen = pygame.display.set_mode((screenWidth, screenHeight))
 pygame.display.set_caption("Flappy Bird!")
 clock = pygame.time.Clock()
-background_image = pygame.image.load("sky.jpeg").convert_alpha()
+
+background_images = []
+for file in glob.glob("background/*"):
+    background_images.append(file)
 
 def flappy_bird(x, y, image):
     screen.blit(img, (x, y))
 
-def background(x, y, image):
-    screen.blit(background_image, (screenHeight, screenWidth))
-
-def getColor():
-    x = randint(0, 255)
-    y = randint(0, 255)
-    z = randint(0, 255)
-    return (x, y, z)
+def background():
+    ram = randint(0, len(background_images)- 1)
+    bimg = pygame.image.load(background_images[ram])
+    return bimg
 
 def score(count):
     font = pygame.font.Font('freesansbold.ttf', 20)
-    text = font.render("Score: "+str(count), True, white)
+    text = font.render("Score: "+str(count), True, black)
     screen.blit(text, [0,0])
 
 def gameOver():
@@ -73,9 +73,9 @@ def replay_or_quit():
         return event.key
     return None
 
-def blocks(x, y, wid, height, gap, color):
-    pygame.draw.rect(screen, color, [x, y, wid, height])
-    pygame.draw.rect(screen, color, [x, y + height + gap, wid, screenHeight])
+def blocks(x, y, wid, height, gap):
+    pygame.draw.rect(screen, green, [x, y, wid, height])
+    pygame.draw.rect(screen, green, [x, y + height + gap, wid, screenHeight])
 
 def main():
     x = 5
@@ -92,7 +92,7 @@ def main():
     block_move = 6
 
     current_score = 0
-    color = getColor()
+    bimage = background()
 
     while not game_over:
         for event in pygame.event.get():
@@ -106,11 +106,10 @@ def main():
                     y_move = 5
         y += y_move
         screen.fill(black)
-        score(current_score)
-        # pygame.transform.scale(background_image, (1280, 1024))
-        # screen.blit(background_image, (0,0))
+        screen.blit(bimage, (0,0))
         flappy_bird(x, y, img)
-        blocks(x_block, y_block, block_width, block_height, gap, color)
+        blocks(x_block, y_block, block_width, block_height, gap)
+        score(current_score)
         x_block -= block_move
 
         roof = 0
@@ -118,7 +117,6 @@ def main():
             gameOver()
         if x_block < (-1 * block_width):
             x_block = screenWidth
-            color = getColor()
             current_score += 1
             block_move += 1
             block_height = randint(0, screenHeight / 2)
@@ -128,10 +126,12 @@ def main():
                 if y < block_height:
                     if x - image_width < block_width + x_block:
                         gameOver()
+                        bimage = background()
         if image_width + x > x_block:
             if y + image_height > block_height + gap:
                 if x < block_width + x_block:
                     gameOver()
+                    bimage = background()
 
         pygame.display.update()
         clock.tick(60)
